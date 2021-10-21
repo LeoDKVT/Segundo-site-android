@@ -40,13 +40,12 @@ header h1 {
     text-align: center;
     text-transform: uppercase;
     padding: 20px;
-
 }
 
 header p {
     color: white;
     text-align: center;
-    padding: 20px;
+    padding: 0px;
 }
 
 nav {
@@ -55,7 +54,11 @@ nav {
 }
 nav a {
     color: white;
-    padding: 5px;
+    padding: 10px;
+    padding-bottom: 6px ;
+    font-size: 12px;
+    text-decoration: none;
+    font-weight: bold;
 }
 
 nav a:hover {
@@ -73,7 +76,6 @@ main {
     border-bottom-right-radius: 15px;
     border-bottom-left-radius: 15px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.479);
-
 }
 
 main img {
