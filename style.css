@@ -45,7 +45,7 @@ header h1 {
 header p {
     color: white;
     text-align: center;
-    padding: 0px;
+    padding: 0px 1px;
 }
 
 nav {
@@ -105,6 +105,22 @@ main p {
     text-align: justify;
     line-height: 1.5em;
 }
+
+article div.video {
+    background-color:var(--cor-verde-escuro);
+    margin: 25px -20px 30px -10px;
+    padding: 20px 440px 0px 0px;
+    padding-bottom: 58%;
+    position: relative;
+}
+
+div.video > iframe {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    }
 
 aside {
     background-color: var(--cor-cinza-claro);
