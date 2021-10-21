@@ -1,0 +1,135 @@
+@charset "UTF-8";
+
+@import url('https://fonts.googleapis.com/css2?family=Cagliostro&family=Nosifer&family=Sancreek&display=swap');
+
+@font-face {
+    font-family: 'android';
+    src: url(fontes/idroid.otf);
+}
+
+:root {
+    --cor-verde-claro: rgb(143, 248, 143);
+    --cor-verde-escuro: rgb(0, 53, 0);
+    --cor-cinza-claro: rgb(190, 190, 190);
+    --cor-cinza-escuro: rgb(85, 85, 85);
+
+    --fonte-padrao:  arial,  verdana,  helvetica,  sans-serif;
+    --fonte-cabeçalho: 'Cagliostro', cursive, arial;
+    --fonte-android: 'android', cursive, arial;
+}
+
+
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+body {
+    background-color: var(--cor-verde-claro);
+}
+
+header {
+    background-color: var(--cor-verde-escuro);
+    height: 150px;
+}
+
+header h1 {
+    color: white;
+    font-family: var(--fonte-cabeçalho);
+    font-size: 25px;
+    text-align: center;
+    text-transform: uppercase;
+    padding: 20px;
+
+}
+
+header p {
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+nav {
+    background-color: var(--cor-verde-escuro);
+    padding: 5px;
+}
+nav a {
+    color: white;
+    padding: 5px;
+}
+
+nav a:hover {
+    background-color: rgb(20, 136, 49);
+    transition-duration: 1s;
+}
+
+main {
+    background-color: white;
+    min-width: 230px;
+    max-width: 1000px;
+    padding: 10px;
+    padding-bottom: 30px;
+    margin: auto;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.479);
+
+}
+
+main img {
+    width: 100%;
+    padding: 10px 0px;
+}
+
+main div {
+    width: 58%;
+    display: block;
+    margin: auto;
+}
+main h1 {
+    color: var(--cor-verde-escuro);
+    font-family: var(--fonte-android);
+    padding: 10px 0px;
+}
+
+main h2 {
+    color: var(--cor-verde-escuro);
+    font-family: var(--fonte-android);
+    padding: 10px 0px;
+}
+
+main p {
+    text-indent: 30px;
+    text-align: justify;
+    line-height: 1.5em;
+}
+
+aside {
+    background-color: var(--cor-cinza-claro);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+aside h2 {
+    color: white;
+    font-family: var(--fonte-padrao);
+}
+
+aside ul {
+    padding: 10px;
+    list-style-position: inside;
+    columns: 2;
+}
+
+footer {
+    background-color: var(--cor-verde-escuro);
+    height: 30px;
+    color: white;
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+footer strong {
+    font-weight: bold;
+}
