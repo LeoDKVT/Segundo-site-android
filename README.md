@@ -1,5 +1,5 @@
 # Site-android
- Site desenvolvido com aprendizagem do curso em vídeo do professor Gustavo Guanabara.
+ Site desenvolvido com HTML e CSS pelo professor Gustavo Guanabara
   
 # :crossed_swords:	Correções e Atividades :crossed_swords:	
 
