@@ -83,11 +83,13 @@ main img {
     padding: 10px 0px;
 }
 
-main div {
-    width: 58%;
+.android-homem {
+    max-width: 350px;
     display: block;
     margin: auto;
 }
+
+
 main h1 {
     color: var(--cor-verde-escuro);
     font-family: var(--fonte-android);
@@ -106,10 +108,9 @@ main p {
     line-height: 1.5em;
 }
 
-article div.video {
+.video {
     background-color:var(--cor-verde-escuro);
-    margin: 25px -20px 30px -10px;
-    padding: 20px 440px 0px 0px;
+    margin: 25px -10px 30px -10px;
     padding-bottom: 58%;
     position: relative;
 }
