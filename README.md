@@ -1,11 +1,7 @@
 # Site-android
- Site desenvolvido com HTML e CSS pelo professor Gustavo Guanabara
+ Site desenvolvido com HTML e CSS pelo professor Gustavo Guanabara no curso em vídeo.
   
 # :crossed_swords:	Correções e Atividades :crossed_swords:	
-
-## Correções :hammer_and_wrench::
-
-° Melhorar o posicionamento do vídeo, ele está apresentando problema em visualizar em telas pequenas, como o celular...
 
 ## Atividades :pencil::
 
