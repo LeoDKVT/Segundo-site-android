@@ -1,898 +1,892 @@
-# You Don't Know JS: Tipos e Gramática
-# Capitulo 4: Coerção
+# You Don't Know JS: Types & Grammar
+# Capítulo 5: Gramática
 
-Agora que nós entendemos melhor os tipos e valores do JavaScript, vamos voltar nossa atenção para um tópico muito controverso: coerção.
+O último tópico a ser abordado é a sintaxe do JavaScript (também conhecida como sendo sua gramática). Você pode pensar que sabe escrever JS, mas há muitas nuances em sua gramática que levam ao equívoco, então queremos nos aprofundar nessas partes e esclarecê-las.
 
-Como mencionado no Capítulo 1, os debates sobre se coerção é um recurso útil ou uma falha no design da linguagem (ou algo no meio disso!) têm ocorrido desde o primeiro dia. Se você já leu outros livros sobre JS, você sabe que a *mensagem* prevalentemente esmagadora é que coerção é mágica, má, confusa, e francamente uma ideia ruim.
+**Nota:** O termo "gramática" pode ser um pouco menos familiar do que o termo "sintaxe". De muitas formas, eles são termos semelhantes, e descrevem as *regras* de como a linguagem funciona.
+Exitem diferenças sutis entre os dois termos, porém, na maioria das vezes, não há contribuição para a discussão. A gramática do JS é uma maneira estruturada de descrever como a sintaxe (operadores, keywords, etc.) se encaixam para formar programas estruturados. Em outras palavras, discutir a sintaxe sem gramática deixaria de fora muitos detalhes importantes. Portanto, o foco da nossa discussão é a *gramática*, mesmo sendo a sintaxe da linguagem o que os desenvolvedores interagem diretamente.
 
-Seguindo o mesmo espírito dessa série de livros, ao invés de fugir da coerção porque todo mundo faz isso, ou porque você tem algum capricho, eu acho que você deve seguir em frente e procurar entender mais claramente.
+## Instruções & Expressões
 
-Nosso objetivo é entender plenamente os prós e contras (sim, *existem* prós!) da coerção, então você poderá estar bem informado para tomar a decisão de como ela se adequa ao seu programa.
+É comum desenvolvedores assumirem que os termos "instruções" e "expressões" são equivalentes. Porém precisamos distinguí-los, pois existem algumas diferenças muito importantes em nossos programas JS.
 
-## Convertendo Valores
+Para exemplificar essa distinção, usaremos a terminologia com a qual você pode estar mais familiarizado: O idioma inglês.
 
-Converter um valor de um tipo para outro é geralmente chamado de "type casting", quando explicitamente, e "coerção" quando feito implicitamente (forçado pelas regras de como um valor é utilizado).
+Uma "sentença" é uma junção de palavras que expressa um pensamento. É composta por uma ou mais "frases", cada uma das quais pode ser conectada com sinais de pontuação ou por palavras de conjunção ("e", "ou", etc). Uma frase pode ser composta por frases menores. Algumas delas são incompletas e não tem muito sentido por si só, enquanto outras podem se sustentar sozinhas. Esse conjunto de regras é chamado de *gramática* da lingua inglesa.
 
-**Nota:** Pode não ser óbvio, mas as coerções do JavaScript sempre resultam em um dos primitivos escalares (veja Capítulo 2), como `string`, `number`, ou `boolean`. Não existe coerção que resulte em um valor complexo como `object` ou `function`. O Capítulo 3 aborda "boxing", que envolve os valores primitivos em seus `object` homólogos, mas isso não é realmente coerção em seu sentido correto.
+E assim acontece com a gramática de JavaScript. Instruções são sentenças, expressões são frases e operadores são conjuções e pontuações.
 
-Pode-se distinguir esses de ainda outra maneira: "type casting" (ou coversão de tipos) ocorrem em tempo de compilação em linguagem staticamente tipadas, enquanto "coerção" é uma conversão que ocorre em tempo de execução em linguagens dinamicamente tipadas.
+Todas expressões em JS podem ser avaliadas em um único resultado. Por exemplo:
 
-Entretanto, em JavaScript, a maioria das pessoas chamam todos esse tipos de *coerção*, por isso a maneira que prefiro chamar de "coerção implícita" vs. "coerção explícita".
+```js
+var a = 3 * 6;
+var b = a;
+b;
+```
 
-A diferença deve ser óbvia: "coerção explícita" é quando consegue-se olhar para o código e ver que a coversão de tipos está ocorrendo intencionalmente, enquanto que a "coerção implícita" é quando o conversão de tipos ocorre de maneira óbvia como um efeito colateral de outra operação intencional.
+Nesse trecho, `3 * 6` é uma expressão (avaliada no valor `18`). Mas `a` na segunda linha é também uma expressão, assim como `b` na terceira linha. As expressões `a` e `b` avaliam os valores armazenados nessas variáveis naquele momnento, que também passa a ser `18`.
 
-Por exemplo, considere essas duas abordagens de coerção:
+Além disso, cada uma das três linhas é uma instrução contendo expressões. `var a = 3 * 6` e `var b = a` são chamados de 'instruções de declaração', pois cada uma declara uma variável ( e opcionalmente atribui um valor a elas). As atribuições `a = 3 * 6` e `b = a` são chamadas de expressões de atribuições.
+
+A terceira linha contém apenas a expressão `b`, que também é uma declaração por si só (embora não seja uma muito interessante!). Esse tipo, geralmente, é chamado de "declaração de expressão".
+
+### Statement Completion Values
+
+It's a fairly little known fact that statements all have completion values (even if that value is just `undefined`).
+
+How would you even go about seeing the completion value of a statement?
+
+The most obvious answer is to type the statement into your browser's developer console, because when you execute it, the console by default reports the completion value of the most recent statement it executed.
+
+Let's consider `var b = a`. What's the completion value of that statement?
+
+The `b = a` assignment expression results in the value that was assigned (`18` above), but the `var` statement itself results in `undefined`. Why? Because `var` statements are defined that way in the spec. If you put `var a = 42;` into your console, you'll see `undefined` reported back instead of `42`.
+
+**Note:** Technically, it's a little more complex than that. In the ES5 spec, section 12.2 "Variable Statement," the `VariableDeclaration` algorithm actually *does* return a value (a `string` containing the name of the variable declared -- weird, huh!?), but that value is basically swallowed up (except for use by the `for..in` loop) by the `VariableStatement` algorithm, which forces an empty (aka `undefined`) completion value.
+
+In fact, if you've done much code experimenting in your console (or in a JavaScript environment REPL -- read/evaluate/print/loop tool), you've probably seen `undefined` reported after many different statements, and perhaps never realized why or what that was. Put simply, the console is just reporting the statement's completion value.
+
+But what the console prints out for the completion value isn't something we can use inside our program. So how can we capture the completion value?
+
+That's a much more complicated task. Before we explain *how*, let's explore *why* would you want to do that?
+
+We need to consider other types of statement completion values. For example, any regular `{ .. }` block has a completion value of the completion value of its last contained statement/expression.
+
+Consider:
+
+```js
+var b;
+if (true) {
+	b = 4 + 38;
+}
+```
+
+If you typed that into your console/REPL, you'd probably see `42` reported, since `42` is the completion value of the `if` block, which took on the completion value of its last assignment expression statement `b = 4 + 38`.
+
+In other words, the completion value of a block is like an *implicit return* of the last statement value in the block.
+
+**Note:** This is conceptually familiar in languages like CoffeeScript, which have implicit `return` values from `function`s that are the same as the last statement value in the function.
+
+But there's an obvious problem. This kind of code doesn't work:
+
+```js
+var a, b;
+a = if (true) {
+	b = 4 + 38;
+};
+```
+
+We can't capture the completion value of a statement and assign it into another variable in any easy syntactic/grammatical way (at least not yet!).
+
+So, what can we do?
+
+**Warning**: For demo purposes only -- don't actually do the following in your real code!
+
+We could use the much maligned `eval(..)` (sometimes pronounced "evil") function to capture this completion value.
+
+```js
+var a, b;
+a = eval( "if (true) { b = 4 + 38; }" );
+a;	// 42
+```
+
+Yeeeaaahhhh. That's terribly ugly. But it works! And it illustrates the point that statement completion values are a real thing that can be captured not just in our console but in our programs.
+
+There's a proposal for ES7 called "do expression." Here's how it might work:
+
+```js
+var a, b;
+a = do {
+	if (true) {
+		b = 4 + 38;
+	}
+};
+a;	// 42
+```
+
+The `do { .. }` expression executes a block (with one or many statements in it), and the final statement completion value inside the block becomes the completion value *of* the `do` expression, which can then be assigned to `a` as shown.
+
+The general idea is to be able to treat statements as expressions -- they can show up inside other statements -- without needing to wrap them in an inline function expression and perform an explicit `return ..`.
+
+For now, statement completion values are not much more than trivia. But they're probably going to take on more significance as JS evolves, and hopefully `do { .. }` expressions will reduce the temptation to use stuff like `eval(..)`.
+
+**Warning:** Repeating my earlier admonition: avoid `eval(..)`. Seriously. See the *Scope & Closures* title of this series for more explanation.
+
+### Expression Side Effects
+
+Most expressions don't have side effects. For example:
+
+```js
+var a = 2;
+var b = a + 3;
+```
+
+The expression `a + 3` did not *itself* have a side effect, like for instance changing `a`. It had a result, which is `5`, and that result was assigned to `b` in the statement `b = a + 3`.
+
+The most common example of an expression with (possible) side effects is a function call expression:
+
+```js
+function foo() {
+	a = a + 1;
+}
+var a = 1;
+foo();		// result: `undefined`, side effect: changed `a`
+```
+
+There are other side-effecting expressions, though. For example:
 
 ```js
 var a = 42;
-
-var b = a + "";			// coerção implícita
-
-var c = String( a );	// coerção explícita
+var b = a++;
 ```
 
-Para `b`, a coerção ocorre implicitamente, porque o operador `+` combinado com um dos operandos sendo uma `string` (`""`) vai insistir que a operação seja uma concatenação de strings (juntando duas strings), que, *como um efeito colateral (oculto)* vai forçar o valor `42` em `a` a ser convertido a seu equivalente em `string`: `"42"`.
-
-Em contrapartida, a função `String(..)` torna bastante óbvio que o valor de `a` é convertido em sua representação em `string`.
-
-As duas abordagens têm o mesmo efeito: `42` vira `"42"`. Mas é o *como* que é o coração dos debates mais acalorados sobre coerção no JavaScript.
-
-**Note:** Tecnicamente, há pequenas nuances no comportamento que vão além da estética. Nós abordaremos isso em mais detalhes mais tarde neste capítulo, na seção "Implicitamente: Strings <--> Number".
-
-Os termos "explícito" e "implícito", ou "óbvio" e "efeito colateral oculto", são *relativos*.
-
-Se você sabe exatamente o que `a + ""` está fazendo e você está intencionalmente convertendo o valor para uma `string`, você pode achar a operção suficientemente "explícita". Por outro lado, se você nunca viu a função `String(..)` usada para coerção de strings, o seu comportamento pode parecer oculto o suficiente para ser "implícito" para você.
-
-Mas nós estamos discutindo "explícito" vs. "implícito" baseados nas prováveis opiniões de um desenvolvedor *mediano, razoavelmente informado, mas não especialista ou devoto pela especificação do JS*. Se você se encaixa de alguma forma nesse grupo, você terá de ajustar a sua perspectiva para estar de acordo com as nossas observações.
-
-Relembrando: é pouco provável que após escrevermos o nosso código, nós sejamos os únicos que vão lê-lo. Mesmo que você saiba todos os prós e contras no JS, considere como um colega de trabalho com menos experiência vai ser se sentir quando ler o seu código. Vai ser "explícito" ou "implícito" para eles da mesma maneira que é para você?
-
-## Operações de valor abstrato
-
-Antes de explorarmos a coerção *explícita* e *implícita*, nós precisamos aprender as regras básicas que governam como os valores *tornam-se* uma `string`, `number` ou `boolean`. A seção 9 da especificação ES5 define várias "operações abstratas" (nome técnico para "operação interna") com as regras de conversão de valor. Nós vamos prestar atenção, especificamente, em: `ToString`, `ToNumber` e `ToBoolean`, e menos na extensão  `ToPrimitive`.
-
-### `ToString`
-
-Quando um valor não-`string` é convertido para uma representação `string`, a conversão é manipulada pela operação abstrata `ToString` na seção 9.8 da especificação.
-
-Valores primitivos nativos têm stringficação natural: `null` torna-se `"null"`, `undefined` torna-se `"undefined"` e `true` torna-se `"true"`. `numbers` são geralmente expressos de forma natural como você esperava, mas como discutimos no Capítulo 2, `numbers` muito pequenos ou muito grandes são representados na forma expoente:
-
-```js
-// multiplicando `1.07` por `1000`, sete vezes mais
-var a = 1.07 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000 * 1000;
-
-// sete vezes três dígitos => 21 digits
-a.toString(); // "1.07e21"
-```
-
-Para objetos regulares, a menos que você mesmo especifique, o padrão `toString()` (localizado em Object.prototype.toString()`) vai retornar uma *`[[Class]]` interna* (veja o capítulo 3), como por exemplo `"[object Object]"`.
-
-Mas como mostrado anteriormente, se um objeto tem seu próprio método `toString()`, e se você usa esse objeto em um tipo `string`, o `toString()` é o que será chamado automaticamente, e o resultado da `string` dessa chamada é o que vai ser usado no lugar.
-
-**Observação:** A forma que um objeto é convertido em uma `string` tecnicamente passa através da operação abstrata `toPrimitive` (seção 9.1 da especificação ES5), mas essas nuances serão abordadas com mais detalhes na seção `ToNumber`, mais tarde nesse capítulo, então vamos pulá-lo aqui.
-
-Arrays têm um padrão `toString()` substituído que stringfica a (string) concatenação de todos esses valores (cada um stringficando a si mesmo), com `","` entre cada valor:
-
-```js
-var a = [1,2,3];
-
-a.toString(); // "1,2,3"
-```
-
-Novamente, `toString()` pode tanto ser chamada explicitamente, ou ela vai ser chamada automaticamente se uma não-`string` for usada em um contexto de `string`.
-
-#### Stringficação do JSON
-
-Outra tarefa que parece terrível relacionada a `ToString` é quando você usa a funcionalidade  `JSON.stringify(..)` para serializar um valor para um valor `string` compatível com JSON.
-
-É importante notar que essa stringficação não é exatamente a mesma que a coerção. Mas como ela é relacionada às regras de `ToString` acima, nós faremos uma leve diversificação para abordar os comportamentos de stringficação JSON aqui.
-
-Por mais simples que sejam o valores, a stringficação JSON se comporta basicamente da mesma forma que conversões `toString()`, exceto que a serialização resulta *sempre como uma `string`*:
-
-```js
-JSON.stringify( 42 );	// "42"
-JSON.stringify( "42" );	// ""42"" (uma string com um valor dentro de aspas)
-JSON.stringify( null );	// "null"
-JSON.stringify( true );	// "true"
-```
-
-Qualuqer valor *seguro para JSON* pode ser stringficada com `JSON.stringify(..)`. Mas o que é *seguro para JSON (JSON-safe)* ? Qualquer valor que pode ser representado em uma representação JSON válida.
-
-Pode ser mais fácil considerar valores que **não** são seguros para JSON. Alguns exemplos: `undefined`s, `function`s, (ES6+) `symbol`s, e `object`s com referências circulares (onde as referências de propriedade em uma estrutura de objeto criam um ciclo interminável entre si). Todos esses são valores ilegais para uma estrutura JSON padrão, principalmente porque ela não têm portabilidade para outras linguagens que consumem valores JSON.
-
-A funcionalidade `JSON.stringify(..)` vai omitir automaticamente valores `undefined`, `function` e `symbol` quando cruzar com eles. Se o valor em questão for encontrado em um `array`, esse valor é substituído por `null` (então aquela posição da informação do array não é alterada). Se for encontrado como propriedade de um objeto, essa propriedade vai simplesmente ser excluída.
-
-Considere:
-
-```js
-JSON.stringify( undefined );					// undefined
-JSON.stringify( function(){} );					// undefined
-
-JSON.stringify( [1,undefined,function(){},4] );	// "[1,null,null,4]"
-JSON.stringify( { a:2, b:function(){} } );		// "{"a":2}"
-```
-
-Mas se você tentar fazer um `JSON.stringify(..)` em um `object` com referência(s) circular nele, um erro vai ser lançado.
-
-Stringficação JSON tem um comportamente especial, que se o valor de um `object` tem um método `toJSON()` definido, esse método vai ser chamado primeiro para pegar um valor a ser usado para serialização.
-
-Você tem a intenção de stringficar um objeto JSON que pode conter valores JSON ilegais, ou se você apenas têm, valores no `object` que não são apropriados para a serialização, você deveria definir um método `toJSON()`para que ele retorne à uma versão *segura para JSON* do `object`.
-
-Por exemplo:
-
-```js
-var o = { };
-
-var a = {
-	b: 42,
-	c: o,
-	d: function(){}
-};
-
-// cria uma referência circular dentro de `a`
-o.e = a;
-
-// vai lançar um erro na referência circular
-// JSON.stringify( a );
-
-// define um valor de serialização JSON personalizado
-a.toJSON = function() {
-	// apenas inclui a propriedade `b` para serialização
-	return { b: this.b };
-};
-
-JSON.stringify( a ); // "{"b":42}"
-```
-
-É bem comum o equívoco que `toJSON()` deveria retornar uma representação stringficada de JSON. Isso está provavelmente incorreto, a menos que você queira realmente stringficar a própria `string` (geralmente não!). `toJSON()` deve retornar o valor regular atual (de qualquer tipo) seria apropriado, e o próprio `JSON.stringify(..)` vai manipular a stringficação.
-
-Em outras palavras, `toJSON()` deve ser interpretado como "adequado para stringficação para um valor seguro para JSON", não "para uma string JSON" como muitos desenvolvedores assumem errôneamente.
-
-Considere:
-
-```js
-var a = {
-	val: [1,2,3],
-
-	// provavelmente correto!
-	toJSON: function(){
-		return this.val.slice( 1 );
-	}
-};
-
-var b = {
-	val: [1,2,3],
-
-	// provavelmente incorreto!
-	toJSON: function(){
-		return "[" +
-			this.val.slice( 1 ).join() +
-		"]";
-	}
-};
-
-JSON.stringify( a ); // "[2,3]"
-
-JSON.stringify( b ); // ""[2,3]""
-```
-
-Na segunda chamada, nós stringficamos o retorno `string` ao invés do próprio `array`, o que provavelmente não é o que queríamos fazer.
-
-Enquanto estamos falando de `JSON.stringify(..)`, vamos discutor algumas funcionalidades pouco conhecidas que continuam a ser bem úteis.
-
-Um segundo argumento opcional pode ser passado para `JSON.stringify(..)` que é chamado *substituto (replacer)*. Esse argumento pode tanto ser um `array` ou uma `function`. É usado para personalizar a serialização recursiva de um `object` fornecendo um mecanismo de filtro no qual propriedades podem ou não serem incluídas, em uma maneira similar de como o `toJSON()` pode preparar um valor para serialização.
-
-Se um *substituto* é um `array`, ele deve ser um `array` de `strings`, no qual cada um vai especificar uma nome de propriedade que é permitida para ser incluída na serialização do `object`. Se uma propriedade que existe não está nessa lista, ela será ignorada.
-
-Se o *substituto* é uma `function`, ele será chamado uma vez pelo próprio `object`, e então uma vez para cada propriedade no `object`, e cada vez que ele passar dois argumentos, *chave* e *valor*. Para ignorar uma *chave* na serialização, retorne `undefined`. Do contrário, retorne o *valor* fornecido.
-
-```js
-var a = {
-	b: 42,
-	c: "42",
-	d: [1,2,3]
-};
-
-JSON.stringify( a, ["b","c"] ); // "{"b":42,"c":"42"}"
-
-JSON.stringify( a, function(k,v){
-	if (k !== "c") return v;
-} );
-// "{"b":42,"d":[1,2,3]}"
-```
-
-**Observação:** No caso do *substituto* da `function`, o argumento chave `k` é `undefined` na primeira chamada (onde o próprio objeto `a` está sendo passado). A declaração `if` **filtra** a propriedade nomeada de `"c"`. Stringficação é recursiva, então o array `[1,2,3]` tem cada um dos seus valores (`1`, `2`, e `3`) passados como `v` para o *substituto*, com índices (`0`, `1`, and `2`) como `k`.
-
-Um terceiro argumento opcional também pode ser passado para `JSON.stringify(..)`, chamado *espaço (space)*, no qual é usado como indentação para deixar a saída mais bonita e amigável. *espaço* pode ser um intermediador positivo para indicar quantos espaços de caracteres devem ser usados em cada nível de identação. Ou, *espaço* pode ser uma `string`, que nesse caso até os primeiros dez caracteres do seu valor serão usados para cada nível de identação.
-
-```js
-var a = {
-	b: 42,
-	c: "42",
-	d: [1,2,3]
-};
-
-JSON.stringify( a, null, 3 );
-// "{
-//    "b": 42,
-//    "c": "42",
-//    "d": [
-//       1,
-//       2,
-//       3
-//    ]
-// }"
-
-JSON.stringify( a, null, "-----" );
-// "{
-// -----"b": 42,
-// -----"c": "42",
-// -----"d": [
-// ----------1,
-// ----------2,
-// ----------3
-// -----]
-// }"
-```
-
-Lembre-se, `JSON.stringify(..)` não é uma forma direta de coerção. Nós o abordamos aqui, porém, por duas razões que seu comportamento está relacionado com coerção `ToString`:
-
-1. Valores `string`, `number`, `boolean`, e `null` todos podem ser stringficados para JSON basicamente o mesmo como a forma que eles convertem valores `string` através das regras da operação abstrata `ToString`.
-2. Se você passou o uma valor de `object` para `JSON.stringify(..)`, e esse `object` tem um método `toJSON()` nele, `toJSON()` é chamado automaticamente para (tipo que) "converter" o valor para ser *seguro para JSON* antes da stringficação.
-
-### `ToNumber`
-
-Se qualquer valor não-`number` é usado de uma forma que exige que seja um `number`, como uma operação matemática, a especificação ES5 define, na seção 9.3, a operação abstrata `ToNumber`.
-
-Por exemplo, `true` torna-se `1` e `false` torna-se `0`. `undefined` torna-se `NaN`, mas (curiosamente) `null` torna-se `0`.
-
-`ToNumber` para valor `string` essencialmente funciona para a maioria das partes como regras/sintaxe para numéricos literais (Veja o Capítulo 3). Se isso falhar, o resultado é `NaN` (ao invés de um erro de sintaxe com `numbers` literais). Um exemplo da diferença é que `0`-números octais pré fixados não são manipulados como octais (apenas como decimais normais) nessa operação, portanto esses octais são válidos como `numbers` literais (veja o Capítulo 2).
-
-**Observação:** As diferenças entre a gramática de `number` literal  e `ToNumber` em um valor de uma `string` são sutis e altamente matizados, e por isso não serão mais abordados aqui. Consulte a seção 9.3.1 da especificação ES5 para mais informações.
-
-Objetos (e arrays) vão primeiro ser convertidos para seus valores primitivos equivalentes, e o valor resultado (se for primitivo mas ainda não um `number`) é convertido para um `number` de acordo com as regras de `ToNumber` mencionadas.
-
-Para converter para seu valor primitivo equivalente, a operação abstrata`ToPrimitive` (seção 9.1 da especificação ES5) irá consultar o valor (usando a operação interna `DefaultValue` -- seção 8.12.8 da especificação ES5) em questão para ver se ele tem um método `valueOf()`. Se o `valueOf()` estiver disponível e ele retornar um valor primitivo, *aquele* valor é usado para coerção. Do contrário, mas se `toString()` está disponível, ele vai fornecer o valor para a coerção.
-
-Se nenhuma das operações pode fornecer um valor primitivo, um `TypeError` é lançado.
-
-A partir de ES5, você pode criar certos objetos não coercivos -- um sem `valueOf()` e `toString()` -- se ele tiver um valor `null` para seu `[[Prototype]]`, geralmente criado com `Object.create(null)`. Veja o título *this & Object Prototypes* desa série para mais informações de `[[Prototype]]`s.
-
-**Observação:** Nós abordamos como converter para `number`s em detalhes mais tarde nesse capítulo, mas para esse próximo trecho de código, apenas suponha que a função `Number(..)` faz isso.
-
-Considere:
-
-```js
-var a = {
-	valueOf: function(){
-		return "42";
-	}
-};
-
-var b = {
-	toString: function(){
-		return "42";
-	}
-};
-
-var c = [4,2];
-c.toString = function(){
-	return this.join( "" );	// "42"
-};
-
-Number( a );			// 42
-Number( b );			// 42
-Number( c );			// 42
-Number( "" );			// 0
-Number( [] );			// 0
-Number( [ "abc" ] );	// NaN
-```
-
-### `ToBoolean`
-
-A seguir, vamos ter uma pequena conversa sobre como `boolean`s se comportam em JS. Há **muita confusão e equívoco** em torno desse tópico, então preste bastante atenção!
-
-Em primeiro lugar, JS tem as palavras-chave atuais `true` e `false`, e elas se comportam exatamente como você esperaria de valores `boolean`. É um equívoco comum que os valores `1` e `0` sejam idênticos à `true/false`. Enquanto isso pode ser verdadeiro em outras linguagens, em JS os `number`s são `number`s e os `boolean`s são `boolean`s. Você pode converter `1` para `true` (e vice-versa) ou `0` para `false` (e vice versa). Mas eles não são os mesmos.
-
-#### Valores Falsos (Falsy)
-
-Mas esse não é o fim da história. Nós precisamos discutir como outros valores além dos dois `boolean`s se comportam independentemente de você converter *para* seus equivalentes `boolean`.
-
-Todos os valores JavaScript podem ser divididos em duas categorias:
-
-1. Valores que irão se tornar `false` se convertidos para `boolean`
-2. Todo o resto (o que vai obviamente se tornar `true`)
-
-Eu não estou apenas sendo engraçado. A especificação JS define uma específica e estreita lista dos valores que poderão tornar-se `false` quando convertidos para um valor `boolean`.
-
-Como sabemos qual é essa lista de valores? Na seção 9.2 da especificação ES5, é definido uma operação abstrata `ToBoolean`, na que diz exatamente o que aconteceria para todos os valores possíveis quando você tenta converte-los "para boolean".
-
-A partir dessa tabela, obtemos o seguinte da chamada lista de valores "falsos":
-
-* `undefined`
-* `null`
-* `false`
-* `+0`, `-0`, e `NaN`
-* `""`
-
-É isso. Se um valor não está nessa lista, é um valor "falso" (falsy), e ele não vai ser convertido para `false` se você forçar uma coerção `boolean` nele.
-
-Por conclusão lógica, se um valor *não* está nessa lista, ele deve estar em *outra lista*, na qual nós chamamos de lista de valores "verdadeiros". Mas o JS realmente não define uma lista de valores "verdadeiros" por si só. Ele dá alguns exemplos, assim como dizemos explicitamente que todos os objetos são verdadeiros, mas principalmente a especificação apenas implica que: **qualquer coisa que não esteja explicitamente na lista falsa, é portanto, verdadeira.**
-
-#### Objetos Falsos (Falsy Objects)
-
-Espere um minuto, aquele títulos de seção soa até contraditório. Eu *apenas disse* literalmente que a especificação chama todos os objetos de verdadeiro, certo? Não deveria existir tal coisa como um "objeto falso".
-
-O que isso possivelmente pode significar?
-
-Você deve estar tentado a pensar que isso significa um *object wrapper* (veja o capítulo 3) em torno de um valor falso (como `""`, `0` ou `false`). Mas não caia nessa *armadilha*.
-
-**Observação** 
-
-Wait a minute, that section title even sounds contradictory. I literally *just said* the spec calls all objects truthy, right? There should be no such thing as a "falsy object."
-
-What could that possibly even mean?
-
-You might be tempted to think it means an object wrapper (see Chapter 3) around a falsy value (such as `""`, `0` or `false`). But don't fall into that *trap*.
-
-Essa é uma piada de especificação sutil que alguns de vocês podem ter sacado.
-
-Considere:
-
-```js
-var a = new Boolean( false );
-var b = new Number( 0 );
-var c = new String( "" );
-```
-
-Nós sabemos que todos os três valores são *objects wraper* (veja o capítulo 3) em torno de valores obviamente falsos. Mas esses objetos se comportam como `true` ou como `false`? Essa é fácil de responder:
-
-```js
-var d = Boolean( a && b && c );
-
-d; // true
-```
-
-Então, todos os três se comportam como `true`, como essa é a única maneira de `d` acabar como `true`.
-
-**Dica:** Note que o wrapped `Boolean(..)` está em torno da expressão `a && b && c` -- você deve estar se perguntando porque isso está ali. Nós vamos voltar mais tarde nesse capítulo, então faça um nota mental disso. Para um pequeno exercício, procure por si mesmo o que `d` será se você apenas fizer `d = a && b && c` sem a chamada `Boolean(..)`!
-
-Então, se "objetos falsos" **não são apenas objetos embrulhados em torno de valores falsos**, o que diabos eles são?
-
-A parte complicada é que eles podem aparecer no seu programa JS, mas eles na verdade não são parte do próprio JavaScript.
-
-**O quê?!**
-
-Há certos casos em que navegadores criam seus próprios tipos de comportamentos *exóticos* de valores, nomeando essa ideia de "objetos falsos", no topo da semântica regular do JS.
-
-Um "objeto falso" é um valor que parece e age como um objeto normal (propriedades, etc.), mas quando você converte eles para um `boolean`, ele faz a coerção para um valor `false`.
-
-**Por quê?!**
-
-O caso mais conhecido é `document.all`: um tipo array (objeto) fornecido pelo seu programa JS *pelo DOM* (não pelo próprio motor JS), que expõe elementos na sua página para seu programa JS. Ele *costuma* se comportar como um objeto normal -- isso seria verdadeiro. Mas não mais.
-
-O próprio `document.all` nunca foi realmente "padrão" e há muito tempo ficou obsoleto/abandonado.
-
-"Eles não podem apenas remover isso então?" Desculpe, boa tentativa. Gostaria que pudessem. Mas há muita base de código JS legado por aí que dependem desse uso.
-
-Então, porque fazer ele agir como falso? Porque coerções de `document.all` para `boolean` (assim como nas declarações `if`) foram quase sempre usadas como um meio de detectar o IE antigo e não padronizado.
-
-O IE há muito tempo vem se aproximando dos padrões e, em muitos casos, vem empurrando a Web para frente tanto ou mais do que qualquer outro navegador. Mas todos aqueles códigos `if` antigos (document.all){ /* it's IE */ }` antigos contiuam por aí, e muito deles, provavelmente, nunca irão embora. Todos esses códigos legados continuam supondo que estão sendo executados em IE antigos, o que leva a más experiências de navegação para usuários IE.
-
-Então, nós não podemos remover `document.all` completamente, mas o IE não quer que códigos `if (document.all) { .. }` funcionem mais, então esses usuários em IE modernos terão novas lógicas de código compatível com os padrões.
-
-"O que devemos fazer?" **"Já sei! Vamos degradar o sistema de tipo do JS e fingir que `document.all` é falso!"
-
-Eca. Isso é uma merda. É um macete louco que a maioria dos desenvolvedores não entendem. Mas a alternativa (fazer nada sobre os problemas sem solução acima) fede *um pouquinho mais*.
-
-Então...é isso que temos: "objetos falsos" loucos e fora do padrão adicionados ao JS pelos navegadores. Ebaa!
-
-#### Valores verdadeiros (truthy)
-
-De volta para a lista verdadeira. O que exatamente são valores verdadeiros? Lembre-se: ** um valor é verdadeiro se ele não está na lista falsa **.
-
-Considere:
-
-```js
-var a = "false";
-var b = "0";
-var c = "''";
-
-var d = Boolean( a && b && c );
-
-d;
-```
-
-Qual valor você espera que `d` tenha aqui? Deve ser ou `true` ou `false`.
-
-É `true`. Porquê? Porque apesar dos conteúdos dos valores daquelas `string` parecerem como valores falsos, os próprios valores da `string` são verdadeiros, porque `""` é o único valor de `string` na lista falsa.
-
-E esses?
-
-```js
-var a = [];				// array vazio -- verdadeiro ou falso?
-var b = {};				// object vazio --  verdadeiro ou falso?
-var c = function(){};	// function vazio --  verdadeiro ou falso?
-
-var d = Boolean( a && b && c );
-
-d;
-```
-
-Sim, você acertou, `d` continua `true` aqui. Porque? Mesma razão de antes. Apesar do que possa parecer, `[]`, `{}`, e `function(){}` *não* estão na lista falsa, e, portanto, são valores verdadeiros.
-
-Em outras palavras, a lista de verdadeiros é infinitamente longa. É impossível de fazer tal lista. Você apenas pode fazer uma lista falsa e *cosultá-la*.
-
-Pegue cinco minutos, escreva a lista falsa em um post-it para o monitor do seu computador, ou memorize-a se preferir. De qualquer forma, você facilmente poderá construir uma lista falsa virtual sempre que precisar simplesmente perguntando se está na lista falsa ou não.
-
-A importância de verdadeiro e falso no entendimento de como um valor vai se comportar quando você coverte-lo (explicitamente ou implicitamente) para uma valor `boolean`. Agora que você tem essas duas listas em mente, nós podemos mergulhar nos exemplos de coerção.
-
-## Coerção Explícita
-
-Coerção *explícita* refere-se à conversões de tipos que são óbvias e explícitas. Há uma ampla variedade de uso de conversões de tipo que caeem na categoria de coerção *explícita* para a maioria dos desenvolvedores.
-
-O objetivo aqui é indetificar padrões em seu código que nós podemos deixar claro e óbvio que nós estamos convertendo um valor de um tipo para o outro, para não deixar buracos para os futuros desenvolvedores tropeçarem. Quanto mais explícitos somos, mais provável que alguém mais tarde consiga ler nosso código e entender sem esforço excessivo qual era a nossa intenção.
-
-Seria difícil encontrar quaisquer discordâncias salientes com coerção *explícita*, uma vez que se alinha mais de perto com o modo como a prática comumente aceita de conversão de tipos funciona em linguagens com tipagem estática. Como tal, vamos tomar como certo (por enquanto) que a coerção *explícita* pode ser aceita como não maligna ou controversa. No entando, nós vamos revisitar isso mais tarde.
-
-### Explicitamente: Strings <--> Numbers
-
-Nós vamos começar com a operação de coerção mais simples, e talvez, mais comum: converter valores entre uma representação `string` e `number`.
-
-Para converter `string`s em `number`s,  nós usamos as funções nativas String(..)` e `Number(..)` (nas quais nos referimos no Capítulo 3 como "construtores nativos"), mas **muito importante**, nós não usamos a palavra-chave `new` na frente delas. Assim sendo, não estamos criando object wrappers.
-
-Em vez disso, nós na verdade criamos uma *coerção explícita* entre os dois tipos:
+The expression `a++` has two separate behaviors. *First*, it returns the current value of `a`, which is `42` (which then gets assigned to `b`). But *next*, it changes the value of `a` itself, incrementing it by one.
 
 ```js
 var a = 42;
-var b = String( a );
-
-var c = "3.14";
-var d = Number( c );
-
-b; // "42"
-d; // 3.14
+var b = a++;
+a;	// 43
+b;	// 42
 ```
 
-`String(..)` converte qualquer outro valor para um valor primitivo `string`, usando as regras da operação `ToString` discutida anteriormente. `Number(..)` coverte qualquer outro valor para um valor primitivo `number`, usando as regras da operação `ToNumber` discutida anteriormente.
+Many developers would mistakenly believe that `b` has value `43` just like `a` does. But the confusion comes from not fully considering the *when* of the side effects of the `++` operator.
 
-Eu chamo isso de coerção *explícita* porque em geral, é bastante óbvio para a maioria dos desenvolvedores que o resultado final dessas operações é a aplicação da conversão de tipo.
-
-Na verdade, a forma como isso é usado, realmente parece muito em como isso é feito em algumas outras linguagem de tipagem estática.
-
-Por exemplo, em C/C++, você pode dizer tanto `(int)x` ou `int(x)`, que ambas irão converter o valor em `x` para um número inteiro. Ambas formas são válidas, mas muitos preferem a última, que meio que parece a chamda de uma função. No JavaScript, quando você diz `Number(x)`, isso parece terrivelmente igual. Importa se isso é *de verdade* uma chamada de função no JS? Na verdade, não.
-
-Além de `String(..)` e `Number(..)`, há outras formas de converter "explicitamente" esses valores entre `string` e `number`:
+The `++` increment operator and the `--` decrement operator are both unary operators (see Chapter 4), which can be used in either a postfix ("after") position or prefix ("before") position.
 
 ```js
 var a = 42;
-var b = a.toString();
-
-var c = "3.14";
-var d = +c;
-
-b; // "42"
-d; // 3.14
+a++;	// 42
+a;		// 43
+++a;	// 44
+a;		// 44
 ```
 
-Chamar `a.toString()` é ostensivamente explícito (está bem claro que "toString" significa "para uma string"), mas existe alguma implicidade. `toString()` não pode ser chamado em um valor *primitivo* como `42`. Então o JS automaticamente "encaixota" (veja o Capítulo 3) `42` em um object wrapper, então `toString()` pode ser chamada contra o objeto. Em outras palavras, você pode chamar isso de "explicitamente implícito".
+When `++` is used in the prefix position as `++a`, its side effect (incrementing `a`) happens *before* the value is returned from the expression, rather than *after* as with `a++`.
 
-Aqui o `+c` esta mostrando o *operador unário* (operador com somente um operando) do operador `+`. Em vez de realizar uma adição matemática (ou concatenação de string -- veja abaixo), o unário `+` converte explicitamente seu operando (`c`) em um valor `number`.
+**Note:** Would you think `++a++` was legal syntax? If you try it, you'll get a `ReferenceError` error, but why? Because side-effecting operators **require a variable reference** to target their side effects to. For `++a++`, the `a++` part is evaluated first (because of operator precedence -- see below), which gives back the value of `a` _before_ the increment. But then it tries to evaluate `++42`, which (if you try it) gives the same `ReferenceError` error, since `++` can't have a side effect directly on a value like `42`.
 
-`c+` é uma coerção explícita? Depende da sua experiêcnia e perspectiva. Se você sabe (e voce, agora, sabe!) que o unário `+` é explicitamente destinado para uma coerção `number`, então é bem explícito e óbvio. Porém, se você nunca viu isso antes, isso pode ser terrivelmente confuso, implícito, com efeitos colaterais ocultos, etc.
-
-**Observação:** A perspectiva geralmente aceita na comunidade open source JS pe que o unário `+` é uma forma aceita de coerção *explícita*.
-
-Mesmo se você realmente goste da forma `+c`, há, definitivamente, alguns lugares onde isso pode parecer terrivelmente confuso, Considere:
+It is sometimes mistakenly thought that you can encapsulate the *after* side effect of `a++` by wrapping it in a `( )` pair, like:
 
 ```js
-var c = "3.14";
-var d = 5+ +c;
-
-d; // 8.14
+var a = 42;
+var b = (a++);
+a;	// 43
+b;	// 42
 ```
 
-O operador unário `-` também converte da mesma forma que o `+` faz, mas ele também inverte o sinal do número. No entanto, você não pode colocar dois `--` próximo um do outro para desvirar o sinal, como isso é feito com o operador de decremnto. Em vez disso, você vai precisar fazer: `- -"3.14"` com espaço no meio, e isso vai resultar na coerção para `3.14`.
+Unfortunately, `( )` itself doesn't define a new wrapped expression that would be evaluated *after* the *after side effect* of the `a++` expression, as we might have hoped. In fact, even if it did, `a++` returns `42` first, and unless you have another expression that reevaluates `a` after the side effect of `++`, you're not going to get `43` from that expression, so `b` will not be assigned `43`.
 
-Você provavelmente pode inventar todo o tipo de combinações horríveis de operadores binários (como `+` para adição) ao lado da forma  unária de um operador. Aqui está outro exemplo maluco:
+There's an option, though: the `,` statement-series comma operator. This operator allows you to string together multiple standalone expression statements into a single statement:
 
 ```js
-1 + - + + + - + 1;	// 2
+var a = 42, b;
+b = ( a++, a );
+a;	// 43
+b;	// 43
 ```
 
-Você deve considerar fortemente evitar corção unária com `+` (ou `-`) quando ela é imediatamentamenta adjacente de outro operador. Enquando o de cima funciona, é quase que universalmente considerado uma má ideia. Mesmo `d = +c` (ou `d =+ c` também!) pode muito facilmente ser confudido com `d += c`, o que é inteiramente diferente!
+**Note:** The `( .. )` around `a++, a` is required here. The reason is operator precedence, which we'll cover later in this chapter.
 
-**Observação:** Outro lugar extremamente confuso para usar o unário `+` é adjacente à outro operador que pode ser, `++` operador de incremento e `--` operador de decremento. Por exemplo: `a +++b`, `a + ++b`, and `a + + +b`. Veja "Efeitos colaterais de expressões" no Capítulo 5 para mais sobre `++`.
+The expression `a++, a` means that the second `a` statement expression gets evaluated *after* the *after side effects* of the first `a++` statement expression, which means it returns the `43` value for assignment to `b`.
 
-Lembre-se, nós estamos tentando ser explícitos e **reduzir** a confusão, não torná-la muito pior!
-
-#### `Date` para `number`
-
-Outro uso comum do operador unário `+` é converter um objeto `Date` para um `number`, porque o resultado é um valor timestamp unix (milisegundos passados desde 1 de Janeiro 1970 1970 00:00:00 UTC) que é a representação da data/hora.
+Another example of a side-effecting operator is `delete`. As we showed in Chapter 2, `delete` is used to remove a property from an `object` or a slot from an `array`. But it's usually just called as a standalone statement:
 
 ```js
-var d = new Date( "Mon, 18 Aug 2014 08:53:06 CDT" );
-
-+d; // 1408369986000
+var obj = {
+	a: 42
+};
+obj.a;			// 42
+delete obj.a;	// true
+obj.a;			// undefined
 ```
 
-O uso mais comum dessa representação é pegar o tempo *atual* como uma timestamp, assim:
+The result value of the `delete` operator is `true` if the requested operation is valid/allowable, or `false` otherwise. But the side effect of the operator is that it removes the property (or array slot).
+
+**Note:** What do we mean by valid/allowable? Nonexistent properties, or properties that exist and are configurable (see Chapter 3 of the *this & Object Prototypes* title of this series) will return `true` from the `delete` operator. Otherwise, the result will be `false` or an error.
+
+One last example of a side-effecting operator, which may at once be both obvious and nonobvious, is the `=` assignment operator.
+
+Consider:
 
 ```js
-var timestamp = +new Date();
+var a;
+a = 42;		// 42
+a;			// 42
 ```
 
-**Nota:** Alguns desenvolvedores estão cientes do "truque" sintático peculiar no JavaScript, é que o `()` definido em uma chamada de construtor (uma função chamada com `new`) é *opcional* se não há argumentos para passar. Então você pode se deparar com a forma `var timestamp = +new Date;`. No entanto, nem todos os desenvolvedores concordam que omitir o `()` melhora a legibilidade, pois é uma exceção de sintaxe incomum que se aplica apenas a forma de chamada `new fn()` e não a forma de chamada tradicional `fn()`.
+It may not seem like `=` in `a = 42` is a side-effecting operator for the expression. But if we examine the result value of the `a = 42` statement, it's the value that was just assigned (`42`), so the assignment of that same value into `a` is essentially a side effect.
 
-Mas coerção não é a única forma de pegar o timestamp de uma objeto `Date`. A abordagem de não coerção talvez seja preferível, já que é mais explícita:
+**Tip:** The same reasoning about side effects goes for the compound-assignment operators like `+=`, `-=`, etc. For example, `a = b += 2` is processed first as `b += 2` (which is `b = b + 2`), and the result of *that* `=` assignment is then assigned to `a`.
+
+This behavior that an assignment expression (or statement) results in the assigned value is primarily useful for chained assignments, such as:
 
 ```js
-var timestamp = new Date().getTime();
-// var timestamp = (new Date()).getTime();
-// var timestamp = (new Date).getTime();
+var a, b, c;
+a = b = c = 42;
 ```
 
-Mas uma opção de não coerção *ainda mais* preferível é usar a função estática adicionada no ES5 `Date.now()`:
+Here, `c = 42` is evaluated to `42` (with the side effect of assigning `42` to `c`), then `b = 42` is evaluated to `42` (with the side effect of assigning `42` to `b`), and finally `a = 42` is evaluated (with the side effect of assigning `42` to `a`).
+
+**Warning:** A common mistake developers make with chained assignments is like `var a = b = 42`. While this looks like the same thing, it's not. If that statement were to happen without there also being a separate `var b` (somewhere in the scope) to formally declare `b`, then `var a = b = 42` would not declare `b` directly. Depending on `strict` mode, that would either throw an error or create an accidental global (see the *Scope & Closures* title of this series).
+
+Another scenario to consider:
 
 ```js
-var timestamp = Date.now();
+function vowels(str) {
+	var matches;
+	if (str) {
+		// pull out all the vowels
+		matches = str.match( /[aeiou]/g );
+		if (matches) {
+			return matches;
+		}
+	}
+}
+vowels( "Hello World" ); // ["e","o","o"]
 ```
 
-E se você quiser fazer o pollyfill de `Date.now()` para navegadores antigos, é bem simples:
+This works, and many developers prefer such. But using an idiom where we take advantage of the assignment side effect, we can simplify by combining the two `if` statements into one:
 
 ```js
-if (!Date.now) {
-	Date.now = function() {
-		return +new Date();
+function vowels(str) {
+	var matches;
+	// pull out all the vowels
+	if (str && (matches = str.match( /[aeiou]/g ))) {
+		return matches;
+	}
+}
+vowels( "Hello World" ); // ["e","o","o"]
+```
+
+**Note:** The `( .. )` around `matches = str.match..` is required. The reason is operator precedence, which we'll cover in the "Operator Precedence" section later in this chapter.
+
+I prefer this shorter style, as I think it makes it clearer that the two conditionals are in fact related rather than separate. But as with most stylistic choices in JS, it's purely opinion which one is *better*.
+
+### Contextual Rules
+
+There are quite a few places in the JavaScript grammar rules where the same syntax means different things depending on where/how it's used. This kind of thing can, in isolation, cause quite a bit of confusion.
+
+We won't exhaustively list all such cases here, but just call out a few of the common ones.
+
+#### `{ .. }` Curly Braces
+
+There's two main places (and more coming as JS evolves!) that a pair of `{ .. }` curly braces will show up in your code. Let's take a look at each of them.
+
+##### Object Literals
+
+First, as an `object` literal:
+
+```js
+// assume there's a `bar()` function defined
+var a = {
+	foo: bar()
+};
+```
+
+How do we know this is an `object` literal? Because the `{ .. }` pair is a value that's getting assigned to `a`.
+
+**Note:** The `a` reference is called an "l-value" (aka left-hand value) since it's the target of an assignment. The `{ .. }` pair is an "r-value" (aka right-hand value) since it's used *just* as a value (in this case as the source of an assignment).
+
+##### Labels
+
+What happens if we remove the `var a =` part of the above snippet?
+
+```js
+// assume there's a `bar()` function defined
+{
+	foo: bar()
+}
+```
+
+A lot of developers assume that the `{ .. }` pair is just a standalone `object` literal that doesn't get assigned anywhere. But it's actually entirely different.
+
+Here, `{ .. }` is just a regular code block. It's not very idiomatic in JavaScript (much more so in other languages!) to have a standalone `{ .. }` block like that, but it's perfectly valid JS grammar. It can be especially helpful when combined with `let` block-scoping declarations (see the *Scope & Closures* title in this series).
+
+The `{ .. }` code block here is functionally pretty much identical to the code block being attached to some statement, like a `for`/`while` loop, `if` conditional, etc.
+
+But if it's a normal block of code, what's that bizarre looking `foo: bar()` syntax, and how is that legal?
+
+It's because of a little known (and, frankly, discouraged) feature in JavaScript called "labeled statements." `foo` is a label for the statement `bar()` (which has omitted its trailing `;` -- see "Automatic Semicolons" later in this chapter). But what's the point of a labeled statement?
+
+If JavaScript had a `goto` statement, you'd theoretically be able to say `goto foo` and have execution jump to that location in code. `goto`s are usually considered terrible coding idioms as they make code much harder to understand (aka "spaghetti code"), so it's a *very good thing* that JavaScript doesn't have a general `goto`.
+
+However, JS *does* support a limited, special form of `goto`: labeled jumps. Both the `continue` and `break` statements can optionally accept a specified label, in which case the program flow "jumps" kind of like a `goto`. Consider:
+
+```js
+// `foo` labeled-loop
+foo: for (var i=0; i<4; i++) {
+	for (var j=0; j<4; j++) {
+		// whenever the loops meet, continue outer loop
+		if (j == i) {
+			// jump to the next iteration of
+			// the `foo` labeled-loop
+			continue foo;
+		}
+		// skip odd multiples
+		if ((j * i) % 2 == 1) {
+			// normal (non-labeled) `continue` of inner loop
+			continue;
+		}
+		console.log( i, j );
+	}
+}
+// 1 0
+// 2 0
+// 2 1
+// 3 0
+// 3 2
+```
+
+**Note:** `continue foo` does not mean "go to the 'foo' labeled position to continue", but rather, "continue the loop that is labeled 'foo' with its next iteration." So, it's not *really* an arbitrary `goto`.
+
+As you can see, we skipped over the odd-multiple `3 1` iteration, but the labeled-loop jump also skipped iterations `1 1` and `2 2`.
+
+Perhaps a slightly more useful form of the labeled jump is with `break __` from inside an inner loop where you want to break out of the outer loop. Without a labeled `break`, this same logic could sometimes be rather awkward to write:
+
+```js
+// `foo` labeled-loop
+foo: for (var i=0; i<4; i++) {
+	for (var j=0; j<4; j++) {
+		if ((i * j) >= 3) {
+			console.log( "stopping!", i, j );
+			// break out of the `foo` labeled loop
+			break foo;
+		}
+		console.log( i, j );
+	}
+}
+// 0 0
+// 0 1
+// 0 2
+// 0 3
+// 1 0
+// 1 1
+// 1 2
+// stopping! 1 3
+```
+
+**Note:** `break foo` does not mean "go to the 'foo' labeled position to continue," but rather, "break out of the loop/block that is labeled 'foo' and continue *after* it." Not exactly a `goto` in the traditional sense, huh?
+
+The nonlabeled `break` alternative to the above would probably need to involve one or more functions, shared scope variable access, etc. It would quite likely be more confusing than labeled `break`, so here using a labeled `break` is perhaps the better option.
+
+A label can apply to a non-loop block, but only `break` can reference such a non-loop label. You can do a labeled `break ___` out of any labeled block, but you cannot `continue ___` a non-loop label, nor can you do a non-labeled `break` out of a block.
+
+```js
+function foo() {
+	// `bar` labeled-block
+	bar: {
+		console.log( "Hello" );
+		break bar;
+		console.log( "never runs" );
+	}
+	console.log( "World" );
+}
+foo();
+// Hello
+// World
+```
+
+Labeled loops/blocks are extremely uncommon, and often frowned upon. It's best to avoid them if possible; for example using function calls instead of the loop jumps. But there are perhaps some limited cases where they might be useful. If you're going to use a labeled jump, make sure to document what you're doing with plenty of comments!
+
+It's a very common belief that JSON is a proper subset of JS, so a string of JSON (like `{"a":42}` -- notice the quotes around the property name as JSON requires!) is thought to be a valid JavaScript program. **Not true!** Try putting `{"a":42}` into your JS console, and you'll get an error.
+
+That's because statement labels cannot have quotes around them, so `"a"` is not a valid label, and thus `:` can't come right after it.
+
+So, JSON is truly a subset of JS syntax, but JSON is not valid JS grammar by itself.
+
+One extremely common misconception along these lines is that if you were to load a JS file into a `<script src=..>` tag that only has JSON content in it (like from an API call), the data would be read as valid JavaScript but just be inaccessible to the program. JSON-P (the practice of wrapping the JSON data in a function call, like `foo({"a":42})`) is usually said to solve this inaccessibility by sending the value to one of your program's functions.
+
+**Not true!** The totally valid JSON value `{"a":42}` by itself would actually throw a JS error because it'd be interpreted as a statement block with an invalid label. But `foo({"a":42})` is valid JS because in it, `{"a":42}` is an `object` literal value being passed to `foo(..)`. So, properly said, **JSON-P makes JSON into valid JS grammar!**
+
+##### Blocks
+
+Another commonly cited JS gotcha (related to coercion -- see Chapter 4) is:
+
+```js
+[] + {}; // "[object Object]"
+{} + []; // 0
+```
+
+This seems to imply the `+` operator gives different results depending on whether the first operand is the `[]` or the `{}`. But that actually has nothing to do with it!
+
+On the first line, `{}` appears in the `+` operator's expression, and is therefore interpreted as an actual value (an empty `object`). Chapter 4 explained that `[]` is coerced to `""` and thus `{}` is coerced to a `string` value as well: `"[object Object]"`.
+
+But on the second line, `{}` is interpreted as a standalone `{}` empty block (which does nothing). Blocks don't need semicolons to terminate them, so the lack of one here isn't a problem. Finally, `+ []` is an expression that *explicitly coerces* (see Chapter 4) the `[]` to a `number`, which is the `0` value.
+
+##### Object Destructuring
+
+Starting with ES6, another place that you'll see `{ .. }` pairs showing up is with "destructuring assignments" (see the *ES6 & Beyond* title of this series for more info), specifically `object` destructuring. Consider:
+
+```js
+function getData() {
+	// ..
+	return {
+		a: 42,
+		b: "foo"
 	};
 }
+var { a, b } = getData();
+console.log( a, b ); // 42 "foo"
 ```
 
-Eu recomendaria pular as formas de coerção relacionadas à datas. Use `Date.now()` para timestamps *atuais* e `new Date(..).getTime()` para pergar um timestamp para uma data/hora *não atual* específica que você precise.
-
-#### O curioso caso do `~`
-
-Um operador coercivo JS que é frequentemente negligenciado e geralmente muito confudido é o operador til `~` (também conhecido como "operador bit a bit NOT"). Muitos dos que até compreendem o que ele faz, vão muitas vezes continuar a evitá-lo. Mas se mantendo no espírito do nossa abordagem nesse livro e série, vamos cavar isso e descobrir se o `~` tem algo de útil para nos dar.
-
-Na seção "inteiros de 32-bit (signed)" do Capítulo 2, nós abordamos como operadores bit a bit em JS são definidos apenas por operações de 32-bit, o que sifnifica que eles forçam seus operando a entrarem em conformidade com representações de valores 32-bit. As regras para como isso acontece são controladas pela operação abstrata `ToInt32` (Especificação ES5, seção 9.5).
-
-`ToInt32` primeiro faz uma coerção para um `ToNumber`, o que significa que se o valor é `"123"`, ele vai primeiro se tornar `123` antes das regras de `ToInt32` serem aplicadas.
-
-Enquanto não é *tecnicamente* uma coerção em si (desde que o type não mude!), o uso de operadores bit a bit (como `|` ou `~`) com um certo valor `number` especial produz um efeito coercivo que resulta em um valor `number` diferente.
-
-Por exemplo, primeiro vamos considerar o `|` "operador bit a bit OU" usado de outra forma em um idioma não-op `0 | x`, que (como o capítulo 2 mostrou) essencialmente apenas faz a conversão `ToInt32`:
+As you can probably tell, `var { a , b } = ..` is a form of ES6 destructuring assignment, which is roughly equivalent to:
 
 ```js
-0 | -0;			// 0
-0 | NaN;		// 0
-0 | Infinity;	// 0
-0 | -Infinity;	// 0
+var res = getData();
+var a = res.a;
+var b = res.b;
 ```
 
-Esse números especiais não são representações 32-bit (desde que eles venham do padrão 64-bit IEEE 754 -- veja o Capítulo 2), então `ToInt32` apenas especifica `0` como resultado para esses valores.
+**Note:** `{ a, b }` is actually ES6 destructuring shorthand for `{ a: a, b: b }`, so either will work, but it's expected that the shorter `{ a, b }` will be become the preferred form.
 
-É discutível se `0 | __` é uma forma *explícita* dessa operação coerciva `ToInt32` ou se ela é mais *implícita*. Pela perspectiva da especificação, é inquestionavelmente *explícita*, mas se você não compreende operações bit a bit nesse nível, isso pode parecer uma mágica mais *implícita*. No entanto, de acordo com outras afirmações nesse capítulo, nós vamos chamá-la de *explícita*.
-
-Então vamos voltar nossa atenção para o `~`. O operador `~` primeiro faz a "coerção" para um valor `number` de 32-bit , e então realiza uma negativa bit a bit (lançando a paridade de cada bit).
-
-**Observação:** Isso é bem similar em como `!` não apenas faz a coerção de seus valores para `boolean` mas também lança sua paridade (veja a discussão dos "unários `!`" depois).
-
-Mas...o quê!? Porquê nos importamos com bits sendo lançados? Isso é algo bem específico, algo com muitas nuances. É bem raro que os desenvolvedores JS precisem raciocinar sobre bits individuais.
-
-Outra forma de pensar sobre a definição de `~` vem da ciência da computação/Matemática old-school: `~` realiza dois complementos. Ótimo, obrigado, isso está totalmente claro!
-
-Vamos tentar de novo: `~x` é aproximadamente o mesmo que `-(x+1)`. Isso é estranho, mas um pouco mais fácil de racionalizar. Então:
+Object destructuring with a `{ .. }` pair can also be used for named function arguments, which is sugar for this same sort of implicit object property assignment:
 
 ```js
-~42;	// -(42+1) ==> -43
+function foo({ a, b, c }) {
+	// no need for:
+	// var a = obj.a, b = obj.b, c = obj.c
+	console.log( a, b, c );
+}
+foo( {
+	c: [1,2,3],
+	a: 42,
+	b: "foo"
+} );	// 42 "foo" [1, 2, 3]
 ```
 
-Você provavelmente continua imaginando o que diabos é toda essa coisa com o `~`, ou porque isso realmente importa para uma discussão sobre coerção. Vamos chegar ao ponto rapidamente.
+So, the context we use `{ .. }` pairs in entirely determines what they mean, which illustrates the difference between syntax and grammar. It's very important to understand these nuances to avoid unexpected interpretations by the JS engine.
 
-Considere `-(x+1)`. Qual é o único valor que você pode realizar essa operação no qual ele irá produzir um resultado `0` (ou, tecnicamente, `-0`)? `-1`. Em outras palavras, `~` usado com uma gama de valores `number` produzirá um valor falso (facilmente coercível para `false`) `0` para o valor de entrada `-1`, e, de outra forma, para qualquer outro valor verdadeiro.
+#### `else if` And Optional Blocks
 
-Por que isso é relevante?
-
-`-1` é comumente chamado de um "sentinel value", o que basicamente significa um valor no qual é dado um significado semântico arbitrário dentro do conjunto maior de valores do primeiro tipo (`number`s). A linguagem C usa o sentinel value `-1` para muitas funções que retornam valores `>=0` para "sucesso" e `-1` para "falha".
-
-O JavaScript adotou esse precedente ao definir a operação `string` de `indexOf(..)`, que busca por uma substring e, se encontrada, retorna sua posição de índice inicial, ou `-1` se não encontrada.
-
-É bem comum tentar usar `indexOf(..)` não apenas como uma operação para pegar a posição, mas como uma verificação `boolean` que verifica a presença/ausência de uma sibstring em outra `string`. Veja agora como como desenvolvedores realizam essas verificações:
+It's a common misconception that JavaScript has an `else if` clause, because you can do:
 
 ```js
-var a = "Hello World";
-
-if (a.indexOf( "lo" ) >= 0) {	// true
-	// encontrado!
+if (a) {
+	// ..
 }
-if (a.indexOf( "lo" ) != -1) {	// true
-	// encontrado!
+else if (b) {
+	// ..
 }
-
-if (a.indexOf( "ol" ) < 0) {	// true
-	// não encontrado!
-}
-if (a.indexOf( "ol" ) == -1) {	// true
-	// não encontrado!
+else {
+	// ..
 }
 ```
 
-Eu acho um pouco grosseiro olhar para `>= 0` ou `== -1`. É basicamente uma "abstração vazada", na medida em que está vazando o comportamento de implementação subjacente -- o uso da sentinela `-1` para "falha" -- no meu código. Eu preferiria esconder tal detahe.
-
-E agora, finalmente, nós vemos porque `~` pode nos ajudar! Usar `~` com `indexOf()` realiza a "coerção" (na verdade apenas transforma) o valor **para ser um `boolean` apropriado para coerção**:
+But there's a hidden characteristic of the JS grammar here: there is no `else if`. But `if` and `else` statements are allowed to omit the `{ }` around their attached block if they only contain a single statement. You've seen this many times before, undoubtedly:
 
 ```js
-var a = "Hello World";
+if (a) doSomething( a );
+```
 
-~a.indexOf( "lo" );			// -4   <-- verdadeiro!
+Many JS style guides will insist that you always use `{ }` around a single statement block, like:
 
-if (~a.indexOf( "lo" )) {	// true
-	// encontrado!
+```js
+if (a) { doSomething( a ); }
+```
+
+However, the exact same grammar rule applies to the `else` clause, so the `else if` form you've likely always coded is *actually* parsed as:
+
+```js
+if (a) {
+	// ..
 }
-
-~a.indexOf( "ol" );			// 0    <-- falso!
-!~a.indexOf( "ol" );		// true
-
-if (!~a.indexOf( "ol" )) {	// true
-	// não encontrado!
-}
-```
-
-`~` pega o valor retornado de `indexOf(..)` e o transforma: em caso de "falha" `-1` nós teremos o falso `0`, e todo outro valor é verdadeiro.
-
-**Observação:** O pseudo-algoritmo `-(x+1)` para `~` implicaria que `~-1` é `-0`, mas na verdade ele produz `0` porque a operação subjacente é na verdade bit a bit, não matemática.
-
-Tecnicamente, `if (~a.indexOf(..))` ainda está confiando na coerção *implícita* da resultante `0` para `false` ou diferente de zero para `true`. Mas no geral, `~` ainda me parece mais como um mecanismo de coerção *explícita*, desde que você saiba o que pretende fazer nessa linguagem.
-
-Eu acho esse é um código mais limpo do que o desorganizado `>= 0` / `== -1`.
-
-##### Truncando bits
-
-Há mais um lugar que `~` pode aparecer em um código: alguns desenvolvedores usam o til duplo `~~` para truncar a parte decimal de um `number` (aplicar "coerção" para um número "inteiro"). É comum (embora erroneamente) dizer que este é o mesmo resultado que chamar `Math.floor(..)`.
-
-Como `~~` funciona, é que o primeiro `~` aplica a coerção `ToInt32` e faz o lançamento do bit e, em seguida, o segundo` ~ `faz outro lançamento de bit a bit, folheando todos os bits de volta para o estado original. O resultado final é apenas a "coerção" `ToInt32` (também conhecida como truncamento).
-
-**Observação:** O lançamento bit a bit duplo de `~~` é muito parecido com o comportamento de paridade da negativa dupla `!!`, explicada mais tarde na seção "Explicitamente: * --> Boolean.
-
-Porém, `~~` precisa de algum cuidado/esclarecimento. Primeiro, ele apenas funciona dependente de valores em 32-bit. Mas, mais importante, ele não funciona da mesma forma em números negativos como o `Math.floor(..)` faz!
-
-```js
-Math.floor( -49.6 );	// -50
-~~-49.6;				// -49
-```
-
-Definindo o `Math.floor(..)`, apesar das diferenças, `~~x` pode truncar para um inteiro (32-bit). Mas o `x | 0` também faz, e aparentemente com (ligeiramente) *menos esforço*.
-
-Então, porque você escolheria `~~x` em vez de `x | 0`? Precedência de operador (veja o Capítulo 5):
-
-```js
-~~1E20 / 10;		// 166199296
-
-1E20 | 0 / 10;		// 1661992960
-(1E20 | 0) / 10;	// 166199296
-```
-
-Assim como todos os outros conselhos aqui, use `~` e `~~`` como mecanismos explícitos para "coerção" e transformação de valores somente se todos que lêem/escrevem o código em questão estão propriamente cientes de como esses operadores funcionam!
-
-### Explicitamente: Parseando strings numéricas
-
-Um resultado semelhante para coagir uma `string` para um` number` pode ser conseguido parseando um `number` de um conteúdo de caracteres de uma `string`. Há no entanto, diferenças distintas entre esse parseamento e a conversão de tipo que examinamos acima. 
-
-Considere:
-
-```js
-var a = "42";
-var b = "42px";
-
-Number( a );	// 42
-parseInt( a );	// 42
-
-Number( b );	// NaN
-parseInt( b );	// 42
-```
-
-Parsear um valor numérico de uma string é *tolerante* para caracteres não numéricos -- isso apenas para de parsear da esquerda para a direita quando encontrado -- enquanto a coerção é *não tolerante* e falha, resultando no valor 'NaN`.
-
-Parseamento não deve ser visto como um substituto para coerção. Essas duas tarefas, mesmo similares, têm propósitos diferentes. Realize o parser de uma `string` como um `number` quando você não sabe/se importa com outros caracteres não numéricos que possam existir no lado direito. Fazer a coerção de um `string` (para um `number`) quando os únicos valores aceitáveis são numéricos e algo como "42px" deve ser rejeitado como um `number`.
-
-**Dica:** `parseInt(..)` tem um irmão gêmeo, `parseFloat(..)`, que (como parece) tira um número de ponto flutuante de uma string.
-
-Não esqueça que `parseInt(..)` opera em valores `string`. Não faz absolutamente nenhum sentido passar um valor `number` para `parseInt(..)`. Nem faria sentido passar nenhum outro tipo de valor, como `true`, `function(){..}` ou `[1,2,3]`.
-
-Se você passar uma não `string`, o valor que você passar vai automaticamente sofrer coerção para uma `string` primeiro (veja "`ToString`" anteriormente), o que vai claramente ser um tipo de coerção *implícita* oculta. É realmente uma péssima ideia confiar em tal comportamento no seu programa, então nunca use `parseInt(..)` em um valor que não seja uma `string`.
-
-Antes do ES5, outra pegadinha existia com `parseInt(..)`, a qual era fonte de muitos bugs de programas JS. Se você não passasse um segundo argumento para indicar qual base numérica (conhecida como radix) usar para interpretar o conteúdo numérico da `string`, `parseInt(..)` iria olhar para os caracteres iniciais e adivinhar.
-
-Se os primeiros dois caracteres fossem `"0x"` ou `"0X"`, o palpite (por convenção) era que você queria interpretar a `string` como um `number` de base hexadecimal(base-16). Por outro lado, se o primeiro caractere fosse `"0"`, o palpite (novamente, por convenção) era que você queria interpretar a `string` como um `number` de base octal (base-8).
-
-`string`s hexadecimais (com iniciais `0x` ou `0X`) não são extremamente fáceis de se misturar. Mas a adivinhação do número octal mostrou-se diabolicamente comum. Por exemplo:
-
-```js
-var hour = parseInt( selectedHour.value );
-var minute = parseInt( selectedMinute.value );
-
-console.log( "The time you selected was: " + hour + ":" + minute);
-```
-
-Parece inofensivo, certo? Tente selecionar `08` para hora e `09` para os minutos. Você vai ter `0:0`. Por quê? porque nem `8` nem `9` são caracteres válidos em octais base-8.
-
-A correção pré-ES5 foi simples, mas muito fácil de esquecer: **sempre passar `10` como o segundo argumento**. Isso era totalmente seguro:
-
-```js
-var hour = parseInt( selectedHour.value, 10 );
-var minute = parseInt( selectedMiniute.value, 10 );
-```
-
-A partir da ES5, `parseInt(..)` não adivinhava mais octais. A menos que você diga o contrário, ele supõe caracteres base-10 (ou base-16 para prefixos `"0"`). Isso é muito melhor. Apenas tenha cuidado se seu código tenha que rodar em ambientes pré-ES5, que nesse caso você ainda vai precisar passar `10` para o radix.
-
-#### Parseando não-Strings
-
-Um exemplo um pouco infame do comportamento do `parseInt(..)` é destacado em uma publicação com uma piada sarcástica alguns anos atrás, tirando sarro desse comportamento JS:
-
-```js
-parseInt( 1/0, 19 ); // 18
-```
-A afirmação pretensiosa (mas totalmente inválida) foi: "Se eu passar infinito e parsear um número inteiro disso, eu deveria recuperar o infinito, não 18." Certamente, JS deve estar louco por esse resultado, certo?
-
-Embora este exemplo seja obviamente artificial e irreal, vamos entrar na loucura por um momento e examinar se JS realmente é tão louco.
-
-Primeiramente, o pecado mais óbvio cometido aqui é passar uma não-`string` para `parseInt(..)`. Não, não, não. Faça isso e você estará pedindo por problemas. Mas mesmo se você fizer, o JS, educadamente, faz a coerção do que você passa em uma `string` que pode tentar parsear.
-
-Alguns poderão argumentar que esse é um comportamento irracional, e que `parseInt(..)` deveria operar em um valor não-`string`. Isso deveria lançar um erro? Isso seria muito a cara do Java, francamente. Eu estremeço ao pensar que JS deveria começar a lançar erros em todo o lugar para que o `try..catch` seja necessário em quase todas as linhas.
-
-Ele deveria retornar `NaN`? Talvez. Mas... que tal:
-
-```js
-parseInt( new String( "42") );
-```
-
-Isso deveria falhar também? É um valor não-`string`. Se você quer que o wrapper de objeto `String` seja desenpacotado para `"42"`, então é realmente tão incomum que o `42` se torne primeiro `"42"` para que `42` possa ser analisado de volta?
-
-Eu argumentaria que essa coerção meio *explícita*, meio *implícita* que pode ocorrer pode ser uma coisa muito útil. Por Exemplo:
-
-```js
-var a = {
-	num: 21,
-	toString: function() { return String( this.num * 2 ); }
-};
-
-parseInt( a ); // 42
-```
-
-O fato de que `parseInt (...)` forçe a coerção de seu valor para um `string` para realizar um parse é bastante sensato. Se você passar lixo, e você receber lixo de volta, não culpe a lata de lixo -- ela só fez seu trabalho fielmente.
-
-Então, se você passar um valor como `Infinity` (o resultado de `1 / 0` obviamente), que tipo de representação de `string` você faria mais sentido para essa coerção? Apenas duas escolhas racionais vêm à mente: `"Infinity"` and `"∞"`. O JS escolhe `"Infinity"`. E sou grato por ele escolher isso.
-
-Eu acho que é uma coisa boa que **todos os valores** em JS tenham algum tipo de representação de `string` padrão, assim eles não são misteriosas caixas preta que nós não podemos debugar e pensar sobre.
-
-Agora, e sobre caracteres base-19? Obviamente, completamente falso e artificial. Nenhum programa JS real usa base-19. É um absurdo. Mas, de novo, vamos curtir o ridículo. Em base-19, os caracteres numéricos válidos são `0` - `9` e `a` - `i` (case insensitive).
-
-Então, de volta para nosso exemplo `parseInt( 1/0, 19 )`. Isso é essencialmente `parseInt( "Infinity", 19 )`. Como ele irá parsear? O primeiro caractere é o `"I"`, no qual é valor `18` na boba base-19. O segundo caractere `"n"` não está no conjuntos de caracteres válidos, e como tal, o parse simplesmente pára, assim como quando ele cruzar com `"p"` em `"42px"`.
-
-O resultado? `18`. Exatamente como ele, sensatamente, deve ser. Os comportamentos envolvidos para nos trazer até aqui, e não para um próprio erro `Infinity`, são **muito importantes** para o JS, e não devem ser descartados tão facilmente.
-
-Outros examplos desse comportamento com `parseInt(..)` que podem ser surpreendentes mas são bastante sensatos incluem:
-
-```js
-parseInt( 0.000008 );		// 0   ("0" de "0.000008")
-parseInt( 0.0000008 );		// 8   ("8" de "8e-7")
-parseInt( false, 16 );		// 250 ("fa" de "false")
-parseInt( parseInt, 16 );	// 15  ("f" de "function..")
-
-parseInt( "0x10" );			// 16
-parseInt( "103", 2 );		// 2
-```
-
-Na verdade `parseInt(..)` é bem previsível e consistente em seu comportamento. Se voce usa-lo corretamente, você terá resultados sensatos. Se você usa-lo incorretamente, o resultado maluco que você terá não é culpa do JavaScript.
-
-### Explicitamente: * --> Boolean
-
-Agora, vamos examinar a coerção de qualquer outro valor não `boolean` para um `boolean`.
-
-Assim como com `String(..)` e `Number(..)` acima, `Boolean(..)` (sem o `new`, claro!) é uma forma explícita de forçar a coerção `ToBoolean`:
-
-```js
-var a = "0";
-var b = [];
-var c = {};
-
-var d = "";
-var e = 0;
-var f = null;
-var g;
-
-Boolean( a ); // true
-Boolean( b ); // true
-Boolean( c ); // true
-
-Boolean( d ); // false
-Boolean( e ); // false
-Boolean( f ); // false
-Boolean( g ); // false
-```
-
-Enquanto `Boolean(..)` é claramente explícita, ela não é tão comum ou idiomática.
-
-Assim como o operador unário `+` faz a coerção de um valor para um `number` (veja acima), o operador unário de negação `!` faz a coerção explicitamente de um valor para um `boolean`. O *problema* é que ele também inverte o valor de verdadeiro para falso ou vice versa. Então a forma mais comum em que desenvolvedores JS fazem a coerção explícita para `boolean` é usando o operador de negação duplo `!!`, porque o segundo `!` vai inverter a paridade de volta à original:
-
-```js
-var a = "0";
-var b = [];
-var c = {};
-
-var d = "";
-var e = 0;
-var f = null;
-var g;
-
-!!a;	// true
-!!b;	// true
-!!c;	// true
-
-!!d;	// false
-!!e;	// false
-!!f;	// false
-!!g;	// false
-```
-
-Qualquer uma dessas coerções `ToBoolean` podem acontecer *implicitamente* sem o `Boolean(..)` ou `!!`, se usado em um contexto `boolean` assim como uma declaração `if(..) ..`. Mas o objetivo é forçar explicitamente o valor para um `boolean` para deixar claro que a coerção `ToBoolean` é intencional.
-
-Outro caso de uso para coerção explícita `ToBoolean` é se você quer forçar uma coerção de valor `true`/`false` em uma serialização JSON de uma estrutura de dados:
-
-```js
-var a = [
-	1,
-	function(){ /*..*/ },
-	2,
-	function(){ /*..*/ }
-];
-
-JSON.stringify( a ); // "[1,null,2,null]"
-
-JSON.stringify( a, function(key,val){
-	if (typeof val == "function") {
-		// força a coerção `ToBoolean` da função
-		return !!val;
+else {
+	if (b) {
+		// ..
 	}
 	else {
-		return val;
+		// ..
 	}
-} );
-// "[1,true,2,true]"
+}
 ```
 
-Se você veio para o JavaScript do Java, você deve reconhecer essa linguagem:
+The `if (b) { .. } else { .. }` is a single statement that follows the `else`, so you can either put the surrounding `{ }` in or not. In other words, when you use `else if`, you're technically breaking that common style guide rule and just defining your `else` with a single `if` statement.
+
+Of course, the `else if` idiom is extremely common and results in one less level of indentation, so it's attractive. Whichever way you do it, just call out explicitly in your own style guide/rules and don't assume things like `else if` are direct grammar rules.
+
+## Operator Precedence
+
+As we covered in Chapter 4, JavaScript's version of `&&` and `||` are interesting in that they select and return one of their operands, rather than just resulting in `true` or `false`. That's easy to reason about if there are only two operands and one operator.
 
 ```js
 var a = 42;
-
-var b = a ? true : false;
+var b = "foo";
+a && b;	// "foo"
+a || b;	// 42
 ```
 
-O operador ternário `? :` vai testar `a` para verdadeiro, e baseado nesse teste atribuirá `true` ou `false` para `b`, em conformidade.
+But what about when there's two operators involved, and three operands?
 
-Nessa superfície, essa linguagem é uma forma *explícita* de coerção do tipo `ToBoolean`, uma vez que é óbvio que apenas `true` ou `false` saem da operação.
+```js
+var a = 42;
+var b = "foo";
+var c = [1,2,3];
+a && b || c; // ???
+a || b && c; // ???
+```
 
-Porém, há uma coerção *implícita* oculta, aquela expressão `a` deve primeiro sofrer a coerção para `boolean` para executar o teste de verdade. Eu chamaria essa linguagem de "explicitamente implícita". Além disso, eu sugiro que **você evite essa linguagem completamente** no JavaScript. Ela não oferece benefícios reais, e pior, mascara algo que não é.
+To understand what those expressions result in, we're going to need to understand what rules govern how the operators are processed when there's more than one present in an expression.
 
-`Boolean(a)` e `!!a` são de longe melhores as opções para coerção *explícita*.
+These rules are called "operator precedence."
 
-## Coerção Implícita
+I bet most readers feel they have a decent grasp on operator precedence. But as with everything else we've covered in this book series, we're going to poke and prod at that understanding to see just how solid it really is, and hopefully learn a few new things along the way.
 
-Coerção *implícita* se refere à tipos de conversões que são ocultas, com efeitos colaterais não óbvios que implicitamente ocorrem por outras ações. Em outras palavras, *coerções implicitas* são qualquer tipo de conversões que não são óbvias (para você).
+Recall the example from above:
 
-Enquanto está claro qual é o objetivo de coerção *explícita* (tornar o código explícito e compreensível), pode ser *muito* óbvio que coerção *implícita* tenha o objetivo oposto: tornar o código mais difícil de se entender.
+```js
+var a = 42, b;
+b = ( a++, a );
+a;	// 43
+b;	// 43
+```
 
-Confiar de olhos fechados, acredito que é aí que grande parte da raiva de coerções vêm. A maioria das reclamações sobre "coerções JavaScript" têm, na verdade, como alvo (eles percebendo ou não) coerções *implícitas*.
+But what would happen if we remove the `( )`?
 
-**Observação:** Douglas Crockford, autor de *"JavaScript: The Good Parts"*, afirmou em muitas palestras de conferências e artigos que coerção JavaScript deve ser evitada. Mas o que ele pareceu falar é que coerção *implícita* é ruim (na opnião dele). Porém, se você ler seu próprio código, você irá achar muitos exemplos de coerção, ambas *implícita* e *explícita*! Na verdade, a raiva dele parece ser primeiramente destinada para a operação `==`, mas você verá nesse capítulo, essa é apenas uma parte do mecanismo de coerção.
+```js
+var a = 42, b;
+b = a++, a;
+a;	// 43
+b;	// 42
+```
 
-Então, a **coerção implícita é** maligna? Ela é perigosa? É uma falha no design do JavaScript? Nós devemos evitá-la a todo custo?
+Wait! Why did that change the value assigned to `b`?
 
-Aposto que a maioria de vocês, leitores, está inclinada a torcer com entusiasmo, "Sim!"
+Because the `,` operator has a lower precedence than the `=` operator. So, `b = a++, a` is interpreted as `(b = a++), a`. Because (as we explained earlier) `a++` has *after side effects*, the assigned value to `b` is the value `42` before the `++` changes `a`.
 
-**Não tão rápido**. Me dê ouvidos.
+This is just a simple matter of needing to understand operator precedence. If you're going to use `,` as a statement-series operator, it's important to know that it actually has the lowest precedence. Every other operator will more tightly bind than `,` will.
 
-Vamos assumir uma perspectiva diferente do que é coerção *implícita*, e pode ser, do que apenas que é "o oposto do bom tipo explícito de coerção". Isso é muito estreiro e perde uma nuance importante.
+Now, recall this example from above:
 
-Vamos definir o objetivo de coerção *implícita* como: reduzir a verbosidade, boilerplate, e/ou detalhes de implentação desnecessários que encobre nosso código com ruído que nos distrai da intenção mais importante.
+```js
+if (str && (matches = str.match( /[aeiou]/g ))) {
+	// ..
+}
+```
+
+We said the `( )` around the assignment is required, but why? Because `&&` has higher precedence than `=`, so without the `( )` to force the binding, the expression would instead be treated as `(str && matches) = str.match..`. But this would be an error, because the result of `(str && matches)` isn't going to be a variable, but instead a value (in this case `undefined`), and so it can't be the left-hand side of an `=` assignment!
+
+OK, so you probably think you've got this operator precedence thing down.
+
+Let's move on to a more complex example (which we'll carry throughout the next several sections of this chapter) to *really* test your understanding:
+
+```js
+var a = 42;
+var b = "foo";
+var c = false;
+var d = a && b || c ? c || b ? a : c && b : a;
+d;		// ??
+```
+
+OK, evil, I admit it. No one would write a string of expressions like that, right? *Probably* not, but we're going to use it to examine various issues around chaining multiple operators together, which *is* a very common task.
+
+The result above is `42`. But that's not nearly as interesting as how we can figure out that answer without just plugging it into a JS program to let JavaScript sort it out.
+
+Let's dig in.
+
+The first question -- it may not have even occurred to you to ask -- is, does the first part (`a && b || c`) behave like `(a && b) || c` or like `a && (b || c)`? Do you know for certain? Can you even convince yourself they are actually different?
+
+```js
+(false && true) || true;	// true
+false && (true || true);	// false
+```
+
+So, there's proof they're different. But still, how does `false && true || true` behave? The answer:
+
+```js
+false && true || true;		// true
+(false && true) || true;	// true
+```
+
+So we have our answer. The `&&` operator is evaluated first and the `||` operator is evaluated second.
+
+But is that just because of left-to-right processing? Let's reverse the order of operators:
+
+```js
+true || false && false;		// true
+(true || false) && false;	// false -- nope
+true || (false && false);	// true -- winner, winner!
+```
+
+Now we've proved that `&&` is evaluated first and then `||`, and in this case that was actually counter to generally expected left-to-right processing.
+
+So what caused the behavior? **Operator precedence**.
+
+Every language defines its own operator precedence list. It's dismaying, though, just how uncommon it is that JS developers have read JS's list.
+
+If you knew it well, the above examples wouldn't have tripped you up in the slightest, because you'd already know that `&&` is more precedent than `||`. But I bet a fair amount of readers had to think about it a little bit.
+
+**Note:** Unfortunately, the JS spec doesn't really have its operator precedence list in a convenient, single location. You have to parse through and understand all the grammar rules. So we'll try to lay out the more common and useful bits here in a more convenient format. For a complete list of operator precedence, see "Operator Precedence" on the MDN site (* https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence).
+
+### Short Circuited
+
+In Chapter 4, we mentioned in a side note the "short circuiting" nature of operators like `&&` and `||`. Let's revisit that in more detail now.
+
+For both `&&` and `||` operators, the right-hand operand will **not be evaluated** if the left-hand operand is sufficient to determine the outcome of the operation. Hence, the name "short circuited" (in that if possible, it will take an early shortcut out).
+
+For example, with `a && b`, `b` is not evaluated if `a` is falsy, because the result of the `&&` operand is already certain, so there's no point in bothering to check `b`. Likewise, with `a || b`, if `a` is truthy, the result of the operand is already certain, so there's no reason to check `b`.
+
+This short circuiting can be very helpful and is commonly used:
+
+```js
+function doSomething(opts) {
+	if (opts && opts.cool) {
+		// ..
+	}
+}
+```
+
+The `opts` part of the `opts && opts.cool` test acts as sort of a guard, because if `opts` is unset (or is not an `object`), the expression `opts.cool` would throw an error. The `opts` test failing plus the short circuiting means that `opts.cool` won't even be evaluated, thus no error!
+
+Similarly, you can use `||` short circuiting:
+
+```js
+function doSomething(opts) {
+	if (opts.cache || primeCache()) {
+		// ..
+	}
+}
+```
+
+Here, we're checking for `opts.cache` first, and if it's present, we don't call the `primeCache()` function, thus avoiding potentially unnecessary work.
+
+### Tighter Binding
+
+But let's turn our attention back to that earlier complex statement example with all the chained operators, specifically the `? :` ternary operator parts. Does the `? :` operator have more or less precedence than the `&&` and `||` operators?
+
+```js
+a && b || c ? c || b ? a : c && b : a
+```
+
+Is that more like this:
+
+```js
+a && b || (c ? c || (b ? a : c) && b : a)
+```
+
+or this?
+
+```js
+(a && b || c) ? (c || b) ? a : (c && b) : a
+```
+
+The answer is the second one. But why?
+
+Because `&&` is more precedent than `||`, and `||` is more precedent than `? :`.
+
+So, the expression `(a && b || c)` is evaluated *first* before the `? :` it participates in. Another way this is commonly explained is that `&&` and `||` "bind more tightly" than `? :`. If the reverse was true, then `c ? c...` would bind more tightly, and it would behave (as the first choice) like `a && b || (c ? c..)`.
+
+### Associativity
+
+So, the `&&` and `||` operators bind first, then the `? :` operator. But what about multiple operators of the same precedence? Do they always process left-to-right or right-to-left?
+
+In general, operators are either left-associative or right-associative, referring to whether **grouping happens from the left or from the right**.
+
+It's important to note that associativity is *not* the same thing as left-to-right or right-to-left processing.
+
+But why does it matter whether processing is left-to-right or right-to-left? Because expressions can have side effects, like for instance with function calls:
+
+```js
+var a = foo() && bar();
+```
+
+Here, `foo()` is evaluated first, and then possibly `bar()` depending on the result of the `foo()` expression. That definitely could result in different program behavior than if `bar()` was called before `foo()`.
+
+But this behavior is *just* left-to-right processing (the default behavior in JavaScript!) -- it has nothing to do with the associativity of `&&`. In that example, since there's only one `&&` and thus no relevant grouping here, associativity doesn't even come into play.
+
+But with an expression like `a && b && c`, grouping *will* happen implicitly, meaning that either `a && b` or `b && c` will be evaluated first.
+
+Technically, `a && b && c` will be handled as `(a && b) && c`, because `&&` is left-associative (so is `||`, by the way). However, the right-associative alternative `a && (b && c)` behaves observably the same way. For the same values, the same expressions are evaluated in the same order.
+
+**Note:** If hypothetically `&&` was right-associative, it would be processed the same as if you manually used `( )` to create grouping like `a && (b && c)`. But that still **doesn't mean** that `c` would be processed before `b`. Right-associativity does **not** mean right-to-left evaluation, it means right-to-left **grouping**. Either way, regardless of the grouping/associativity, the strict ordering of evaluation will be `a`, then `b`, then `c` (aka left-to-right).
+
+So it doesn't really matter that much that `&&` and `||` are left-associative, other than to be accurate in how we discuss their definitions.
+
+But that's not always the case. Some operators would behave very differently depending on left-associativity vs. right-associativity.
+
+Consider the `? :` ("ternary" or "conditional") operator:
+
+```js
+a ? b : c ? d : e;
+```
+
+`? :` is right-associative, so which grouping represents how it will be processed?
+
+* `a ? b : (c ? d : e)`
+* `(a ? b : c) ? d : e`
+
+The answer is `a ? b : (c ? d : e)`. Unlike with `&&` and `||` above, the right-associativity here actually matters, as `(a ? b : c) ? d : e` *will* behave differently for some (but not all!) combinations of values.
+
+One such example:
+
+```js
+true ? false : true ? true : true;		// false
+true ? false : (true ? true : true);	// false
+(true ? false : true) ? true : true;	// true
+```
+
+Even more nuanced differences lurk with other value combinations, even if the end result is the same. Consider:
+
+```js
+true ? false : true ? true : false;		// false
+true ? false : (true ? true : false);	// false
+(true ? false : true) ? true : false;	// false
+```
+
+From that scenario, the same end result implies that the grouping is moot. However:
+
+```js
+var a = true, b = false, c = true, d = true, e = false;
+a ? b : (c ? d : e); // false, evaluates only `a` and `b`
+(a ? b : c) ? d : e; // false, evaluates `a`, `b` AND `e`
+```
+
+So, we've clearly proved that `? :` is right-associative, and that it actually matters with respect to how the operator behaves if chained with itself.
+
+Another example of right-associativity (grouping) is the `=` operator. Recall the chained assignment example from earlier in the chapter:
+
+```js
+var a, b, c;
+a = b = c = 42;
+```
+
+We asserted earlier that `a = b = c = 42` is processed by first evaluating the `c = 42` assignment, then `b = ..`, and finally `a = ..`. Why? Because of the right-associativity, which actually treats the statement like this: `a = (b = (c = 42))`.
+
+Remember our running complex assignment expression example from earlier in the chapter?
+
+```js
+var a = 42;
+var b = "foo";
+var c = false;
+var d = a && b || c ? c || b ? a : c && b : a;
+d;		// 42
+```
+
+Armed with our knowledge of precedence and associativity, we should now be able to break down the code into its grouping behavior like this:
+
+```js
+((a && b) || c) ? ((c || b) ? a : (c && b)) : a
+```
+
+Or, to present it indented if that's easier to understand:
+
+```js
+(
+  (a && b)
+    ||
+  c
+)
+  ?
+(
+  (c || b)
+    ?
+  a
+    :
+  (c && b)
+)
+  :
+a
+```
+
+Let's solve it now:
+
+1. `(a && b)` is `"foo"`.
+2. `"foo" || c` is `"foo"`.
+3. For the first `?` test, `"foo"` is truthy.
+4. `(c || b)` is `"foo"`.
+5. For the second `?` test, `"foo"` is truthy.
+6. `a` is `42`.
+
+That's it, we're done! The answer is `42`, just as we saw earlier. That actually wasn't so hard, was it?
+
+### Disambiguation
+
+You should now have a much better grasp on operator precedence (and associativity) and feel much more comfortable understanding how code with multiple chained operators will behave.
+
+But an important question remains: should we all write code understanding and perfectly relying on all the rules of operator precedence/associativity? Should we only use `( )` manual grouping when it's necessary to force a different processing binding/order?
+
+Or, on the other hand, should we recognize that even though such rules *are in fact* learnable, there's enough gotchas to warrant ignoring automatic precedence/associativity? If so, should we thus always use `( )` manual grouping and remove all reliance on these automatic behaviors?
+
+This debate is highly subjective, and heavily symmetrical to the debate in Chapter 4 over *implicit* coercion. Most developers feel the same way about both debates: either they accept both behaviors and code expecting them, or they discard both behaviors and stick to manual/explicit idioms.
+
+Of course, I cannot answer this question definitively for the reader here anymore than I could in Chapter 4. But I've presented you the pros and cons, and hopefully encouraged enough deeper understanding that you can make informed rather than hype-driven decisions.
+
+In my opinion, there's an important middle ground. We should mix both operator precedence/associativity *and* `( )` manual grouping into our programs -- I argue the same way in Chapter 4 for healthy/safe usage of *implicit* coercion, but certainly don't endorse it exclusively without bounds.
+
+For example, `if (a && b && c) ..` is perfectly OK to me, and I wouldn't do `if ((a && b) && c) ..` just to explicitly call out the associativity, because I think it's overly verbose.
+
+On the other hand, if I needed to chain two `? :` conditional operators together, I'd certainly use `( )` manual grouping to make it absolutely clear what my intended logic is.
+
+Thus, my advice here is similar to that of Chapter 4: **use operator precedence/associativity where it leads to shorter and cleaner code, but use `( )` manual grouping in places where it helps create clarity and reduce confusion.**
+
+## Automatic Semicolons
+
+ASI (Automatic Semicolon Insertion) is when JavaScript assumes a `;` in certain places in your JS program even if you didn't put one there.
+
+Why would it do that? Because if you omit even a single required `;` your program would fail. Not very forgiving. ASI allows JS to be tolerant of certain places where `;` aren't commonly thought  to be necessary.
+
+It's important to note that ASI will only take effect in the presence of a newline (aka line break). Semicolons are not inserted in the middle of a line.
+
+Basically, if the JS parser parses a line where a parser error would occur (a missing expected `;`), and it can reasonably insert one, it does so. What's reasonable for insertion? Only if there's nothing but whitespace and/or comments between the end of some statement and that line's newline/line break.
+
+Consider:
+
+```js
+var a = 42, b
+c;
+```
+
+Should JS treat the `c` on the next line as part of the `var` statement? It certainly would if a `,` had come anywhere (even another line) between `b` and `c`. But since there isn't one, JS assumes instead that there's an implied `;` (at the newline) after `b`. Thus, `c;` is left as a standalone expression statement.
+
+Similarly:
+
+```js
+var a = 42, b = "foo";
+a
+b	// "foo"
+```
+
+That's still a valid program without error, because expression statements also accept ASI.
+
+There's certain places where ASI is helpful, like for instance:
+
+```js
+var a = 42;
+do {
+	// ..
+} while (a)	// <-- ; expected here!
+a;
+```
+
+The grammar requires a `;` after a `do..while` loop, but not after `while` or `for` loops. But most developers don't remember that! So, ASI helpfully steps in and inserts one.
+
+As we said earlier in the chapter, statement blocks do not require `;` termination, so ASI isn't necessary:
+
+```js
+var a = 42;
+while (a) {
+	// ..
+} // <-- no ; expected here
+a;
+```
+
+The other major case where ASI kicks in is with the `break`, `continue`, `return`, and (ES6) `yield` keywords:
+
+```js
+function foo(a) {
+	if (!a) return
+	a *= 2;
+	// ..
+}
+```
+
+The `return` statement doesn't carry across the newline to the `a *= 2` expression, as ASI assumes the `;` terminating the `return` statement. Of course, `return` statements *can* easily break across multiple lines, just not when there's nothing after `return` but the newline/line break.
+
+```js
+function foo(a) {
+	return (
+		a * 2 + 3 / 12
+	);
+}
+```
+
+Identical reasoning applies to `break`, `continue`, and `yield`.
